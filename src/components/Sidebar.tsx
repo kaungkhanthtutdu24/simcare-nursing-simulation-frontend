@@ -1,21 +1,24 @@
+import { Link } from 'react-router'
 import type { CandidateId, Role, View } from '../model'
 import { candidateNav, educatorNav } from './navigation'
 
 interface SidebarProps {
   role: Role
-  view: View
+  /** Screen the current route belongs to; its link is highlighted. */
+  currentView: View | undefined
   candidateId: CandidateId
   hasUnread: boolean
-  onNavigate: (view: View) => void
-  onCandidateChange: (id: CandidateId) => void
+  pathFor: (view: View) => string
+  /** Demo only: shows the candidate workspace selector when provided. */
+  onCandidateChange?: (id: CandidateId) => void
 }
 
 export function Sidebar({
   role,
-  view,
+  currentView,
   candidateId,
   hasUnread,
-  onNavigate,
+  pathFor,
   onCandidateChange,
 }: SidebarProps) {
   const candidate = role === 'candidate'
@@ -24,19 +27,25 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar-label">{candidate ? 'PATIENT RECORD' : 'EDUCATOR WORKSPACE'}</div>
-      {nav.map((item) => (
-        <button
-          key={item.view}
-          className={`side-link ${view === item.view ? 'active' : ''}`}
-          onClick={() => onNavigate(item.view)}
-        >
-          <span className="side-icon">{item.icon}</span>
-          <span>{item.label}</span>
-          {candidate && item.view === 'inbox' && hasUnread && <span className="nav-count">1</span>}
-        </button>
-      ))}
+      {nav.map((item) => {
+        const active = currentView === item.view
+        return (
+          <Link
+            key={item.view}
+            to={pathFor(item.view)}
+            className={`side-link ${active ? 'active' : ''}`}
+            aria-current={active ? 'page' : undefined}
+          >
+            <span className="side-icon">{item.icon}</span>
+            <span>{item.label}</span>
+            {candidate && item.view === 'inbox' && hasUnread && (
+              <span className="nav-count">1</span>
+            )}
+          </Link>
+        )
+      })}
 
-      {candidate && (
+      {candidate && onCandidateChange && (
         <>
           <div className="sidebar-separator" />
           <div className="sidebar-label">DEMO ACCOUNT</div>

@@ -40,6 +40,7 @@ button {
   cursor: pointer;
 }
 button:focus-visible,
+a:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
   outline: 3px solid #82c9c4;
@@ -160,6 +161,20 @@ textarea:focus-visible {
 .ribbon-tab.active {
   color: var(--teal-dark);
   border-bottom: 3px solid var(--teal);
+}
+/* Navigation items are links (client-side routing); keep them looking like buttons. */
+a.ribbon-tab,
+a.ribbon-action,
+a.side-link,
+a.primary-button {
+  text-decoration: none;
+}
+a.primary-button {
+  display: inline-block;
+}
+a.ribbon-tab {
+  display: inline-flex;
+  align-items: center;
 }
 .ribbon {
   height: 100px;

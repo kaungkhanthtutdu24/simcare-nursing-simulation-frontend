@@ -79,13 +79,7 @@ export function EducatorCasesView({
                   : 'Result response pending'}
               </small>
             </div>
-            <button
-              className="text-button"
-              onClick={() => {
-                onCandidateChange(id)
-                onNavigate('review')
-              }}
-            >
+            <button className="text-button" onClick={() => onCandidateChange(id)}>
               Review →
             </button>
           </div>

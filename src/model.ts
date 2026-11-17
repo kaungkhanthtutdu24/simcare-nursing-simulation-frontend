@@ -16,8 +16,14 @@ export type View =
   | 'release'
   | 'review'
 export type CandidateId = 'candidate-01' | 'candidate-02'
+export const candidateIds: CandidateId[] = ['candidate-01', 'candidate-02']
+export const isCandidateId = (value: string | undefined): value is CandidateId =>
+  candidateIds.includes(value as CandidateId)
 
 export interface PatientCase {
+  /** Stable identifier used in URLs. Never edited, so links keep working. */
+  caseKey: string
+  /** Simulation ID shown to users; educators can edit it. */
   id: string
   name: string
   age: number
@@ -173,6 +179,7 @@ const emptyCandidate = (name: string): CandidateWork => ({
 })
 export const initialDemoState: DemoState = {
   patient: {
+    caseKey: 'case-1',
     id: 'SIM-1042',
     name: 'Aroha Williams',
     age: 54,

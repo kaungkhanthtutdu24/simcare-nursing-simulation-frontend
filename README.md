@@ -48,6 +48,42 @@ This is a frontend prototype. There is no real login, server, API, PostgreSQL da
 
 Medicine, condition, ethnicity, route, and classification fields accept free text so users can record any appropriate fictional entry. No interface can responsibly claim to list every medication, ethnicity, or health condition worldwide. This prototype does not verify medicine doses or give clinical guidance. Clinical terminology catalogues, validation, and safety rules require separate academic and technical decisions.
 
+## Routes
+
+Routing uses React Router 7 (`src/routes/`). `case-1` is the case's fixed URL key; `SIM-1042` is the patient's Simulation ID (if an educator changes it, links use the new ID).
+
+| URL                                                           | Screen                                               |
+| ------------------------------------------------------------- | ---------------------------------------------------- |
+| `/`                                                           | Redirects to `/candidate/cases`                      |
+| `/candidate`                                                  | Candidate dashboard; redirects to `/candidate/cases` |
+| `/candidate/cases`                                            | My cases (assigned cases)                            |
+| `/candidate/cases/:caseId`                                    | Patient overview                                     |
+| `/candidate/cases/:caseId/background`                         | Patient background                                   |
+| `/candidate/cases/:caseId/consultation`                       | Redirects to the patient's clinical notes            |
+| `/candidate/cases/:caseId/inbox`                              | Clinical inbox                                       |
+| `/candidate/cases/:caseId/feedback`                           | Educator feedback                                    |
+| `/candidate/cases/:caseId/patients/:patientId`                | Redirects to demographics                            |
+| `/candidate/cases/:caseId/patients/:patientId/demographics`   | Demographics                                         |
+| `/candidate/cases/:caseId/patients/:patientId/history`        | Medical and family history                           |
+| `/candidate/cases/:caseId/patients/:patientId/medications`    | Medications                                          |
+| `/candidate/cases/:caseId/patients/:patientId/clinical-notes` | SOAP clinical note (consultation)                    |
+| `/candidate/cases/:caseId/patients/:patientId/referral`       | Referral                                             |
+| `/candidate/cases/:caseId/patients/:patientId/vitals`         | Vital signs                                          |
+| `/educator`                                                   | Educator dashboard; redirects to `/educator/cases`   |
+| `/educator/cases`                                             | Case management                                      |
+| `/educator/cases/:caseId`                                     | Redirects to the case editor                         |
+| `/educator/cases/:caseId/edit`                                | Case editor                                          |
+| `/educator/cases/:caseId/release`                             | Event release                                        |
+| `/educator/cases/:caseId/review`                              | Redirects to the last reviewed candidate             |
+| `/educator/cases/:caseId/review/:candidateId`                 | Candidate's record, responses, and feedback          |
+| anything else, or an unknown case, patient, or candidate ID   | 404 page                                             |
+
+Example: `/candidate/cases/case-1/patients/SIM-1042/vitals`.
+
+**Roles and access.** The role comes from the URL section (`/candidate` or `/educator`). Each section is wrapped in `RequireRole`, which checks the session from `src/auth/`. The demo session allows both roles; a real session should come from the backend. This only shapes the interface and is **not security**: the backend must check every request.
+
+**Hosting.** URLs are real paths, so the web server must return `index.html` for unknown paths (SPA fallback). `npm run dev` and `npm run preview` already do this.
+
 ## Development checks
 
 - `npm run build`: TypeScript compilation and Vite production bundle.
@@ -56,10 +92,12 @@ Medicine, condition, ethnicity, route, and classification fields accept free tex
 
 ## Main files
 
-- `src/App.tsx`: application state, role switch, and page layout.
+- `src/main.tsx`: creates the router and the demo session.
+- `src/routes/`: route table (`routes.tsx`), URL builders (`paths.ts`), the app shell and shared state (`AppLayout.tsx`, `appContext.ts`), route guards, and page wrappers.
+- `src/auth/`: session type and the demo session provider (to be replaced by real authentication).
 - `src/model.ts`: typed records, demo data, and local storage migration.
 - `src/components/`: shared layout pieces (title bar, ribbon, patient banner, sidebar, right panel, status bar), navigation config, and small building blocks (`PageHead`, `RepeatCard`).
-- `src/views/CandidateRouter.tsx` and `src/views/EducatorRouter.tsx`: choose the screen for the current view.
+- `src/views/NotFoundView.tsx`, `src/views/AccessDeniedView.tsx`: 404 and no-access pages.
 - `src/views/candidate/`: cases, overview, consultation, inbox, feedback, and background screens.
 - `src/views/record/`: demographics, history, medications, SOAP note, referral, and vital signs screens.
 - `src/views/educator/`: case management, case editor, event release, and candidate review screens.
