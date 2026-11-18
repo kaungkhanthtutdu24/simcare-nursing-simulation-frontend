@@ -3,30 +3,58 @@ import type { View } from '../model'
 export interface NavItem {
   view: View
   label: string
-  icon: string
 }
 
-export const candidateNav: NavItem[] = [
-  { view: 'cases', label: 'My cases', icon: '▦' },
-  { view: 'overview', label: 'Overview', icon: '◫' },
-  { view: 'demographics', label: 'Demographics', icon: '♙' },
-  { view: 'history', label: 'Medical history', icon: '☷' },
-  { view: 'medications', label: 'Medications', icon: '✚' },
-  { view: 'clinical-notes', label: 'Clinical notes', icon: '✎' },
-  { view: 'inbox', label: 'Clinical inbox', icon: '▤' },
-  { view: 'referrals', label: 'Referral', icon: '➜' },
-  { view: 'vitals', label: 'Vital signs', icon: '♡' },
-  { view: 'feedback', label: 'Feedback', icon: '◇' },
+export interface NavGroup {
+  label: string
+  items: NavItem[]
+  /** Shown only when a case is loaded (its links open that case). */
+  requiresCase?: boolean
+}
+
+export const candidateNavGroups: NavGroup[] = [
+  {
+    label: 'My learning',
+    items: [
+      { view: 'dashboard', label: 'Dashboard' },
+      { view: 'profile', label: 'Profile' },
+      { view: 'cases', label: 'My cases' },
+      { view: 'feedback', label: 'Feedback' },
+    ],
+  },
+  {
+    label: 'Patient record',
+    requiresCase: true,
+    items: [
+      { view: 'overview', label: 'Overview' },
+      { view: 'demographics', label: 'Demographics' },
+      { view: 'history', label: 'Medical history' },
+      { view: 'medications', label: 'Medications' },
+      { view: 'clinical-notes', label: 'Clinical notes' },
+      { view: 'inbox', label: 'Clinical inbox' },
+      { view: 'referrals', label: 'Referral' },
+      { view: 'vitals', label: 'Vital signs' },
+    ],
+  },
 ]
 
-export const educatorNav: NavItem[] = [
-  { view: 'cases', label: 'Cases', icon: '▦' },
-  { view: 'case-editor', label: 'Case editor', icon: '✎' },
-  { view: 'release', label: 'Event release', icon: '▤' },
-  { view: 'review', label: 'Candidate review', icon: '◇' },
+export const educatorNavGroups: NavGroup[] = [
+  {
+    label: 'Educator workspace',
+    items: [
+      { view: 'cases', label: 'Cases' },
+      { view: 'case-editor', label: 'Case editor' },
+      { view: 'release', label: 'Event release' },
+      { view: 'review', label: 'Candidate review' },
+    ],
+  },
 ]
 
-/** Candidate views that edit the patient record (rendered by RecordViews). */
+/** Flat lists, kept for code that used the earlier navigation shape. */
+export const candidateNav: NavItem[] = candidateNavGroups.flatMap((g) => g.items)
+export const educatorNav: NavItem[] = educatorNavGroups.flatMap((g) => g.items)
+
+/** Candidate views that edit the patient record. */
 export const recordViews: View[] = [
   'demographics',
   'history',

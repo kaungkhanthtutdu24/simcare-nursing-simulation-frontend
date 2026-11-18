@@ -1,75 +1,114 @@
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
-import type { CandidateId, Role, View } from '../model'
-import { candidateNav, educatorNav } from './navigation'
+import { ShieldCheck } from 'lucide-react'
+import type { Role, View } from '../model'
+import { candidateNavGroups, educatorNavGroups } from './navigation'
+import { navIcons } from './ui/icons'
 
 interface SidebarProps {
   role: Role
   /** Screen the current route belongs to; its link is highlighted. */
   currentView: View | undefined
-  candidateId: CandidateId
   hasUnread: boolean
+  hasCase: boolean
   pathFor: (view: View) => string
-  /** Demo only: shows the candidate workspace selector when provided. */
-  onCandidateChange?: (id: CandidateId) => void
+  /** Drawer state on small screens. Ignored by the desktop and tablet layouts. */
+  open: boolean
+  onClose: () => void
 }
 
 export function Sidebar({
   role,
   currentView,
-  candidateId,
   hasUnread,
+  hasCase,
   pathFor,
-  onCandidateChange,
+  open,
+  onClose,
 }: SidebarProps) {
   const candidate = role === 'candidate'
-  const nav = candidate ? candidateNav : educatorNav
+  const groups = (candidate ? candidateNavGroups : educatorNavGroups).filter(
+    (group) => !group.requiresCase || hasCase,
+  )
+  const navRef = useRef<HTMLElement>(null)
+
+  // When the drawer opens, move focus into it; Escape closes it.
+  useEffect(() => {
+    if (!open) return
+    navRef.current?.querySelector<HTMLElement>('a')?.focus()
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-label">{candidate ? 'PATIENT RECORD' : 'EDUCATOR WORKSPACE'}</div>
-      {nav.map((item) => {
-        const active = currentView === item.view
-        return (
-          <Link
-            key={item.view}
-            to={pathFor(item.view)}
-            className={`side-link ${active ? 'active' : ''}`}
-            aria-current={active ? 'page' : undefined}
-          >
-            <span className="side-icon">{item.icon}</span>
-            <span>{item.label}</span>
-            {candidate && item.view === 'inbox' && hasUnread && (
-              <span className="nav-count">1</span>
-            )}
-          </Link>
-        )
-      })}
-
-      {candidate && onCandidateChange && (
-        <>
-          <div className="sidebar-separator" />
-          <div className="sidebar-label">DEMO ACCOUNT</div>
-          <label className="sidebar-select">
-            Candidate
-            <select
-              value={candidateId}
-              onChange={(e) => onCandidateChange(e.target.value as CandidateId)}
-            >
-              <option value="candidate-01">Candidate 01</option>
-              <option value="candidate-02">Candidate 02</option>
-            </select>
-          </label>
-        </>
+    <>
+      {open && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label="Close menu"
+          tabIndex={-1}
+          onClick={onClose}
+        />
       )}
+      <nav
+        id="app-sidebar"
+        ref={navRef}
+        className={`sidebar ${open ? 'open' : ''}`}
+        aria-label="Main navigation"
+      >
+        {groups.map((group) => {
+          const labelId = `nav-group-${group.label.toLowerCase().replace(/\s+/g, '-')}`
+          return (
+            <div className="nav-group" key={group.label}>
+              <p className="nav-group-label" id={labelId}>
+                {group.label}
+              </p>
+              <ul aria-labelledby={labelId}>
+                {group.items.map((item) => {
+                  const active = currentView === item.view
+                  const Icon = navIcons[item.view]
+                  const unread = candidate && item.view === 'inbox' && hasUnread
+                  return (
+                    <li key={item.view}>
+                      <Link
+                        to={pathFor(item.view)}
+                        className={`side-link ${active ? 'active' : ''}`}
+                        aria-current={active ? 'page' : undefined}
+                        title={item.label}
+                        onClick={onClose}
+                      >
+                        <Icon className="side-icon" aria-hidden="true" size={20} />
+                        <span className="side-label">{item.label}</span>
+                        {unread && (
+                          <>
+                            <span className="nav-count" aria-hidden="true">
+                              1
+                            </span>
+                            <span className="visually-hidden">, 1 unread</span>
+                          </>
+                        )}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )
+        })}
 
-      <div className="sidebar-footer">
-        <span className="mini-icon">i</span>
-        <span>
-          Training workspace
-          <br />
-          <small>No real patient data</small>
-        </span>
-      </div>
-    </aside>
+        <div className="sidebar-footer">
+          <ShieldCheck aria-hidden="true" size={18} />
+          <span className="side-label">
+            Training workspace
+            <br />
+            <small>No real patient data</small>
+          </span>
+        </div>
+      </nav>
+    </>
   )
 }

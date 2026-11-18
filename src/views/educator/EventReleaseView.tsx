@@ -55,7 +55,7 @@ export function EventReleaseView({ event, onEventChange, onNotice }: EducatorVie
         <div className="editor-footer">
           <span>
             {released
-              ? 'Visible in both candidate inboxes. Hold it to edit.'
+              ? 'Visible in candidate inboxes. Hold it to edit.'
               : 'Candidates cannot see this item yet.'}
           </span>
           <div className="button-row">

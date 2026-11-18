@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import type { PatientCase } from '../../model'
+import { ApiError } from '../../api/http'
+import { ErrorState } from '../../components/AsyncState'
 import { PageHead } from '../../components/PageHead'
 import type { EducatorViewProps } from './types'
 
@@ -12,7 +15,43 @@ const longFields: { key: PatientLongKey; label: string }[] = [
   { key: 'opening', label: 'Consultation opening' },
 ]
 
-export function CaseEditorView({ patient, onPatientChange, onNotice }: EducatorViewProps) {
+export function CaseEditorView({
+  patient,
+  onPatientChange,
+  caseSource,
+  caseDirty,
+  onSaveCase,
+  onSetPublished,
+  onNotice,
+}: EducatorViewProps) {
+  const api = caseSource === 'api'
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<ApiError | null>(null)
+
+  /** Runs a save or publish, showing a notice on success and the error on failure. */
+  const run = async (action: () => Promise<void>, success: string) => {
+    setBusy(true)
+    setError(null)
+    try {
+      await action()
+      onNotice(success)
+    } catch (e) {
+      setError(
+        e instanceof ApiError
+          ? e
+          : new ApiError({ kind: 'http', message: String(e), method: 'PUT', path: '' }),
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const footerText = !api
+    ? 'Changes are stored in this browser for the demo.'
+    : caseDirty
+      ? 'Unsaved changes. Save the draft to update the backend.'
+      : 'All changes are saved to the backend.'
+
   const textInput = (key: PatientTextKey, label: string, wide = false) => (
     <label className={wide ? 'wide' : undefined}>
       {label}
@@ -56,21 +95,28 @@ export function CaseEditorView({ patient, onPatientChange, onNotice }: EducatorV
             </label>
           ))}
         </div>
+        {error && <ErrorState error={error} />}
         <div className="editor-footer">
-          <span>Changes are stored in this browser for the demo.</span>
+          <span>{busy ? 'Saving…' : footerText}</span>
           <div className="button-row">
             <button
               className="secondary-button"
-              onClick={() => onNotice('Case draft saved locally')}
+              disabled={busy}
+              onClick={() =>
+                run(onSaveCase, api ? 'Case saved to the backend' : 'Case draft saved locally')
+              }
             >
               Save draft
             </button>
             <button
               className="primary-button"
-              onClick={() => {
-                onPatientChange({ published: !patient.published })
-                onNotice(patient.published ? 'Case moved to draft' : 'Case published')
-              }}
+              disabled={busy}
+              onClick={() =>
+                run(
+                  () => onSetPublished(!patient.published),
+                  patient.published ? 'Case moved to draft' : 'Case published',
+                )
+              }
             >
               {patient.published ? 'Move to draft' : 'Publish case'}
             </button>

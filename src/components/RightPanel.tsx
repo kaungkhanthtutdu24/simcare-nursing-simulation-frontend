@@ -1,31 +1,41 @@
+import { Circle, CircleCheck, Info, Lightbulb } from 'lucide-react'
 import type { CandidateWork, PatientCase, Role, ScenarioEvent } from '../model'
+import type { DataSourceName } from '../data/sources'
 
 interface RightPanelProps {
   role: Role
-  patient: PatientCase
+  /** Null while cases load from the backend, or if there are none. */
+  patient: PatientCase | null
   event: ScenarioEvent
   work: CandidateWork
+  casesSource: DataSourceName
 }
 
 function CheckRow({ done, label }: { done: boolean; label: string }) {
   return (
-    <div className={`check-row ${done ? 'done' : ''}`}>
-      <span>{done ? '✓' : '○'}</span>
+    <li className={`check-row ${done ? 'done' : ''}`}>
+      {done ? (
+        <CircleCheck aria-hidden="true" size={16} />
+      ) : (
+        <Circle aria-hidden="true" size={16} />
+      )}
       {label}
-    </div>
+      <span className="visually-hidden">{done ? ' (done)' : ' (not done)'}</span>
+    </li>
   )
 }
 
 function StatusRow({ label }: { label: string }) {
   return (
-    <div className="check-row">
-      <span>•</span>
+    <li className="check-row">
+      <Info aria-hidden="true" size={16} />
       {label}
-    </div>
+    </li>
   )
 }
 
-export function RightPanel({ role, patient, event, work }: RightPanelProps) {
+/** The panel's content, shared by the desktop side panel and the collapsible version. */
+function CaseInfoContent({ role, patient, event, work, casesSource }: RightPanelProps) {
   const candidate = role === 'candidate'
   const hasUnread = event.released && !work.inboxOpened
 
@@ -36,24 +46,18 @@ export function RightPanel({ role, patient, event, work }: RightPanelProps) {
     : 'Edit the case, release an inbox event, and review each candidate separately.'
 
   return (
-    <aside className="right-panel">
-      <div className="right-panel-header">
-        {candidate ? 'LEARNING DASHBOARD' : 'EDUCATOR DASHBOARD'}
-        <span>•••</span>
-      </div>
-      <div className="right-panel-body">
-        <div className="attention-card">
-          <div className="attention-head">
-            <span className="attention-icon">!</span>
-            <strong>{candidate ? 'Current focus' : 'Demo controls'}</strong>
-          </div>
-          <p>{focusText}</p>
+    <div className="right-panel-body">
+      <div className="attention-card">
+        <div className="attention-head">
+          <Lightbulb aria-hidden="true" size={18} />
+          <strong>{candidate ? 'Current focus' : 'Demo controls'}</strong>
         </div>
+        <p>{focusText}</p>
+      </div>
 
-        <div className="panel-block">
-          <div className="panel-heading">
-            <h3>{candidate ? 'Your progress' : 'Case status'}</h3>
-          </div>
+      <div className="panel-block">
+        <h3 className="panel-heading">{candidate ? 'Your progress' : 'Case status'}</h3>
+        <ul className="check-list">
           {candidate ? (
             <>
               <CheckRow done label="Patient record available" />
@@ -63,23 +67,52 @@ export function RightPanel({ role, patient, event, work }: RightPanelProps) {
             </>
           ) : (
             <>
-              <StatusRow label={patient.published ? 'Case published' : 'Case held as draft'} />
+              <StatusRow
+                label={
+                  !patient
+                    ? 'No case loaded'
+                    : patient.published
+                      ? 'Case published'
+                      : 'Case held as draft'
+                }
+              />
               <StatusRow label={event.released ? 'Event released' : 'Event held'} />
-              <StatusRow label="Two independent candidates" />
+              <StatusRow label="Individual candidate workspaces" />
             </>
           )}
-        </div>
-
-        <div className="panel-block">
-          <div className="panel-heading">
-            <h3>About this prototype</h3>
-          </div>
-          <p className="panel-copy">
-            Interface and data are stored in this browser. Authentication, API calls, and database
-            persistence are future integration work.
-          </p>
-        </div>
+        </ul>
       </div>
+
+      <div className="panel-block">
+        <h3 className="panel-heading">About this prototype</h3>
+        <p className="panel-copy">
+          {casesSource === 'api'
+            ? 'Cases and patients come from the backend API. Other data and demo accounts are stored in this browser. Server authentication is future integration work.'
+            : 'Interface, data, and demo accounts are stored in this browser. Server authentication, clinical API calls, and database persistence are future integration work.'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** Side panel on wide screens. */
+export function RightPanel(props: RightPanelProps) {
+  return (
+    <aside className="right-panel" aria-label="Case information">
+      <div className="right-panel-header">
+        {props.role === 'candidate' ? 'Learning summary' : 'Educator summary'}
+      </div>
+      <CaseInfoContent {...props} />
     </aside>
+  )
+}
+
+/** The same information as a collapsible section, shown above the page on smaller screens. */
+export function CaseInfoDisclosure(props: RightPanelProps) {
+  return (
+    <details className="case-info">
+      <summary>Case info</summary>
+      <CaseInfoContent {...props} />
+    </details>
   )
 }

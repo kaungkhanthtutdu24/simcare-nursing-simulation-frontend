@@ -1,4 +1,3 @@
-import { isCandidateId } from '../model'
 import type { CandidateId, PatientCase, Role, View } from '../model'
 
 export type RecordSection =
@@ -14,19 +13,30 @@ export const patientRouteId = (patient: PatientCase) => patient.id.trim() || 'pa
 /** True if every ID in the URL (:caseId, :patientId, :candidateId) refers to something that exists. */
 export function routeParamsExist(
   params: Record<string, string | undefined>,
-  patient: PatientCase,
+  {
+    caseKeys,
+    patient,
+    candidateIds,
+  }: { caseKeys: string[]; patient: PatientCase | null; candidateIds: CandidateId[] },
 ): boolean {
-  if (params.caseId !== undefined && params.caseId !== patient.caseKey) return false
-  if (params.patientId !== undefined && params.patientId !== patientRouteId(patient)) return false
-  if (params.candidateId !== undefined && !isCandidateId(params.candidateId)) return false
+  if (params.caseId !== undefined && !caseKeys.includes(params.caseId)) return false
+  if (params.patientId !== undefined && (!patient || params.patientId !== patientRouteId(patient)))
+    return false
+  if (params.candidateId !== undefined && !candidateIds.includes(params.candidateId)) return false
   return true
 }
 
 /** Builds every URL in the app, so paths are defined in one place. */
 export const paths = {
   home: '/',
+  signIn: '/login',
+  signUp: '/signup',
+  /** Developer page. Not under /api, which the dev server proxies to the backend. */
+  backendStatus: '/backend-status',
   candidate: {
     home: '/candidate',
+    dashboard: '/candidate/dashboard',
+    profile: '/candidate/profile',
     cases: '/candidate/cases',
     case: (caseKey: string) => `/candidate/cases/${enc(caseKey)}`,
     caseSection: (caseKey: string, section: CaseSection) =>
@@ -44,7 +54,11 @@ export const paths = {
   },
 }
 
+/** Where each role lands after signing in. */
 export const roleHome = (role: Role) =>
+  role === 'educator' ? paths.educator.cases : paths.candidate.dashboard
+
+const caseList = (role: Role) =>
   role === 'educator' ? paths.educator.cases : paths.candidate.cases
 
 const recordSections: Partial<Record<View, RecordSection>> = {
@@ -64,12 +78,16 @@ const caseSections: Partial<Record<View, CaseSection>> = {
 }
 
 export interface PathContext {
-  patient: PatientCase
+  /** The current case, or null if none is loaded (links then go to the case list). */
+  patient: PatientCase | null
   reviewCandidate: CandidateId
 }
 
 /** Maps a screen name (as used by navigation and buttons) to its URL for a role. */
 export function viewPath(role: Role, view: View, { patient, reviewCandidate }: PathContext) {
+  if (role === 'candidate' && view === 'dashboard') return paths.candidate.dashboard
+  if (role === 'candidate' && view === 'profile') return paths.candidate.profile
+  if (!patient) return caseList(role)
   const { caseKey } = patient
   if (role === 'educator') {
     switch (view) {

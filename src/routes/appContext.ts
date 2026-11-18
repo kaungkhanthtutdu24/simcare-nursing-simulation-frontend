@@ -1,13 +1,6 @@
 import { createContext, useContext } from 'react'
-import type {
-  CandidateId,
-  CandidateWork,
-  DemoState,
-  PatientCase,
-  Role,
-  ScenarioEvent,
-  View,
-} from '../model'
+import type { CandidateId, CandidateWork, DemoState, Role, ScenarioEvent, View } from '../model'
+import type { CasesController } from '../data/useCases'
 
 /** Shared app state and actions, provided by AppLayout to every route. */
 export interface AppContextValue {
@@ -19,7 +12,8 @@ export interface AppContextValue {
   /** Candidate most recently opened in the educator review screen. */
   reviewCandidate: CandidateId
   setReviewCandidate: (id: CandidateId) => void
-  updatePatient: (patch: Partial<PatientCase>) => void
+  /** Cases and patients, from demo data or the API (VITE_CASES_SOURCE). */
+  cases: CasesController
   updateEvent: (patch: Partial<ScenarioEvent>) => void
   updateCandidate: (id: CandidateId, patch: Partial<CandidateWork>) => void
   notify: (message: string) => void

@@ -6,7 +6,7 @@ import { roleHome } from '../routes/paths'
 /** Shown when the session lacks the role for a section. Not a security boundary. */
 export function AccessDeniedView() {
   const session = useSession()
-  const home = session.roles[0]
+  const home = session.role
 
   return (
     <>

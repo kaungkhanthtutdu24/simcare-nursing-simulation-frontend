@@ -1,5 +1,5 @@
 import type { CandidateId, CandidateWork, VitalSigns } from '../../model'
-import { candidateNames } from '../../model'
+import { candidateDisplayName } from '../../auth/localAccounts'
 import { PageHead } from '../../components/PageHead'
 import type { EducatorViewProps } from './types'
 
@@ -53,7 +53,7 @@ export function CandidateReviewView({
   onNotice,
 }: EducatorViewProps) {
   const work = candidates[selectedCandidate]
-  const name = candidateNames[selectedCandidate]
+  const name = candidateDisplayName(selectedCandidate)
   const { demographics } = work
 
   const conditions = work.conditions
@@ -82,8 +82,11 @@ export function CandidateReviewView({
               value={selectedCandidate}
               onChange={(e) => onCandidateChange(e.target.value as CandidateId)}
             >
-              <option value="candidate-01">Candidate 01</option>
-              <option value="candidate-02">Candidate 02</option>
+              {(Object.keys(candidates) as CandidateId[]).map((id) => (
+                <option key={id} value={id}>
+                  {candidateDisplayName(id)}
+                </option>
+              ))}
             </select>
           </label>
         }

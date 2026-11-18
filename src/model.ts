@@ -1,5 +1,7 @@
 export type Role = 'candidate' | 'educator'
 export type View =
+  | 'dashboard'
+  | 'profile'
   | 'cases'
   | 'overview'
   | 'demographics'
@@ -15,10 +17,7 @@ export type View =
   | 'case-editor'
   | 'release'
   | 'review'
-export type CandidateId = 'candidate-01' | 'candidate-02'
-export const candidateIds: CandidateId[] = ['candidate-01', 'candidate-02']
-export const isCandidateId = (value: string | undefined): value is CandidateId =>
-  candidateIds.includes(value as CandidateId)
+export type CandidateId = string
 
 export interface PatientCase {
   /** Stable identifier used in URLs. Never edited, so links keep working. */
@@ -116,10 +115,6 @@ export interface DemoState {
   event: ScenarioEvent
   candidates: Record<CandidateId, CandidateWork>
 }
-export const candidateNames: Record<CandidateId, string> = {
-  'candidate-01': 'Candidate 01',
-  'candidate-02': 'Candidate 02',
-}
 export const newCondition = (): MedicalCondition => ({
   id: crypto.randomUUID(),
   condition: '',
@@ -153,7 +148,7 @@ export const newVitalSigns = (): VitalSigns => ({
   heartRate: '',
   temperature: '',
 })
-const emptyCandidate = (name: string): CandidateWork => ({
+export const emptyCandidate = (name: string): CandidateWork => ({
   demographics: { name, dateOfBirth: '', address: '', ethnicities: '' },
   conditions: [],
   familyHistory: [],
@@ -229,13 +224,17 @@ export function loadDemoState(): DemoState {
     if (!raw) return initialDemoState
     const saved = JSON.parse(raw) as Partial<DemoState>
     const patient = { ...initialDemoState.patient, ...saved.patient }
+    const candidates: Record<CandidateId, CandidateWork> = {
+      'candidate-01': mergeCandidate(saved.candidates?.['candidate-01'], patient.name),
+      'candidate-02': mergeCandidate(saved.candidates?.['candidate-02'], patient.name),
+    }
+    for (const [id, work] of Object.entries(saved.candidates ?? {})) {
+      if (!(id in candidates)) candidates[id] = mergeCandidate(work, patient.name)
+    }
     return {
       patient,
       event: { ...initialDemoState.event, ...saved.event },
-      candidates: {
-        'candidate-01': mergeCandidate(saved.candidates?.['candidate-01'], patient.name),
-        'candidate-02': mergeCandidate(saved.candidates?.['candidate-02'], patient.name),
-      },
+      candidates,
     }
   } catch {
     return initialDemoState

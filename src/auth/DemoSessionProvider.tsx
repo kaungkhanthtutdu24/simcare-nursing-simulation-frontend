@@ -1,19 +1,50 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { CandidateId } from '../model'
+import {
+  registerDemoAccount,
+  restoreSession,
+  signInDemoAccount,
+  signOutDemoAccount,
+  updateDemoProfile,
+} from './localAccounts'
 import { SessionContext } from './session'
-import type { Session } from './session'
+import type { AuthState, ProfileUpdate, SignUpInput } from './session'
 
-/**
- * Demo session: one person can act as either role and switch candidate
- * workspaces. Replace with a provider that reads the signed-in user from the
- * backend once authentication exists.
- */
+/** Temporary browser-local authentication while backend auth is being built. */
 export function DemoSessionProvider({ children }: { children: ReactNode }) {
-  const [candidateId, setCandidateId] = useState<CandidateId>('candidate-01')
-  const session = useMemo<Session>(
-    () => ({ roles: ['candidate', 'educator'], candidateId, switchCandidate: setCandidateId }),
-    [candidateId],
+  const [user, setUser] = useState(restoreSession)
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const session = await signInDemoAccount(email, password)
+    setUser(session)
+    return session
+  }, [])
+
+  const signUp = useCallback(async (input: SignUpInput) => {
+    const session = await registerDemoAccount(input)
+    setUser(session)
+    return session
+  }, [])
+
+  const signOut = useCallback(() => {
+    signOutDemoAccount()
+    setUser(null)
+  }, [])
+
+  const accountId = user?.accountId
+  const updateProfile = useCallback(
+    async (update: ProfileUpdate) => {
+      if (!accountId) throw new Error('Sign in to update your profile.')
+      const session = updateDemoProfile(accountId, update)
+      setUser(session)
+      return session
+    },
+    [accountId],
   )
-  return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>
+
+  const value = useMemo<AuthState>(
+    () => ({ user, signIn, signUp, signOut, updateProfile }),
+    [user, signIn, signUp, signOut, updateProfile],
+  )
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
 }

@@ -1,5 +1,5 @@
 import type { CandidateId } from '../../model'
-import { candidateNames } from '../../model'
+import { candidateDisplayName } from '../../auth/localAccounts'
 import { PageHead } from '../../components/PageHead'
 import type { EducatorViewProps } from './types'
 
@@ -34,7 +34,7 @@ export function EducatorCasesView({
           <h3>{patient.name}</h3>
           <p>{patient.scenario}</p>
           <div className="case-meta">
-            <span>2 candidate workspaces</span>
+            <span>{candidateIds.length} candidate workspaces</span>
             <span>{event.released ? 'Event released' : 'Event held'}</span>
           </div>
         </div>
@@ -53,7 +53,7 @@ export function EducatorCasesView({
           <span className="section-kicker">SCENARIO EVENT</span>
           <h3>{event.title}</h3>
           <p className="muted">
-            {event.released ? 'Available in both candidate inboxes.' : 'Held until you release it.'}
+            {event.released ? 'Available in candidate inboxes.' : 'Held until you release it.'}
           </p>
           <button className="text-button" onClick={() => onNavigate('release')}>
             Manage release →
@@ -71,7 +71,7 @@ export function EducatorCasesView({
         {candidateIds.map((id) => (
           <div className="candidate-row" key={id}>
             <div>
-              <strong>{candidateNames[id]}</strong>
+              <strong>{candidateDisplayName(id)}</strong>
               <small>
                 {candidates[id].noteSubmitted ? 'Consultation submitted' : 'Consultation pending'} ·{' '}
                 {candidates[id].responseSubmitted
